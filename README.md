@@ -1,14 +1,14 @@
-# Table Class Documentation
+# Dictionary Class Documentation
 
 ## Overview
 
-The `Table` class creates reactive, observable table wrappers that automatically emit change events when modified. It provides a powerful way to implement reactive programming patterns by monitoring table modifications and propagating change notifications through nested table hierarchies.
+The `Dictionary` class creates reactive, observable dictionary wrappers that automatically emit change events when modified. It provides a powerful way to implement reactive programming patterns by monitoring dictionary modifications and propagating change notifications through nested dictionary hierarchies.
 
 **Key Features:**
 - Automatic change detection and event emission
-- Recursive wrapping of nested tables
-- Change event bubbling from child to parent tables
-- Access to the original unwrapped table via `Raw` property
+- Recursive wrapping of nested dictionaries
+- Change event bubbling from child to parent dictionaries
+- Access to the original unwrapped dictionary via `Raw` property
 - Automatic cleanup and memory management
 
 **Use Cases:**
@@ -21,35 +21,35 @@ The `Table` class creates reactive, observable table wrappers that automatically
 
 ### Constructor
 
-#### `Table.new<T>(table: T): T & Table<T>`
-Creates a new reactive table wrapper around the provided table.
+#### `Dictionary.new<T>(table: T): T & Dictionary<T>`
+Creates a new reactive dictionary wrapper around the provided table.
 
 **Parameters:**
 - `table: T` - The table to wrap and make reactive
 
 **Returns:**
-- `T & Table<T>` - The original table with added reactive functionality
+- `T & Dictionary<T>` - The original table with added reactive functionality
 
 **Example:**
 ```lua
 local data = { name = "John", age = 25 }
-local reactiveData = Table.new(data)
+local reactiveData = Dictionary.new(data)
 ```
 
 ### Properties
 
 #### `Changed: Signal`
-A signal that fires whenever the table or any of its nested tables are modified.
+A signal that fires whenever the dictionary or any of its nested dictionaries are modified.
 
 **Example:**
 ```lua
 reactiveData.Changed:Connect(function()
-    print("Table was modified!")
+    print("Dictionary was modified!")
 end)
 ```
 
 #### `Raw: T`
-Direct access to the original unwrapped table without reactive behavior.
+Direct access to the original unwrapped dictionary without reactive behavior.
 
 **Example:**
 ```lua
@@ -58,22 +58,26 @@ local originalTable = reactiveData.Raw
 
 ### Methods
 
-#### `Destroy(): nil`
-Cleans up the table instance by destroying the change signal and clearing references.
+#### `Destroy(self: Dictionary<T>): nil`
+Cleans up the dictionary instance by destroying the change signal and clearing references. When called, the dictionary's listening capabilities are permanently disabled by destroying the underlying event system. All descendant nested dictionaries also have their listening capabilities disabled automatically.
+
+**Note:** Any existing connections to the `Changed` signal should be disconnected manually before calling `Destroy()` to ensure proper cleanup.
 
 **Example:**
 ```lua
-reactiveData:Destroy()
+local connection = reactiveData.Changed:Connect(function() end)
+connection:Disconnect()  -- Clean up connections first
+reactiveData:Destroy()   -- Then destroy the dictionary
 ```
 
 ### Behavior
 
-#### Nested Table Handling
-When a table is assigned as a value, it's automatically wrapped in a new `Table` instance. Changes to nested tables bubble up to parent tables.
+#### Nested Dictionary Handling
+When a table is assigned as a value, it's automatically wrapped in a new `Dictionary` instance. Changes to nested dictionaries bubble up to parent dictionaries.
 
 ```lua
-local data = Table.new({})
-data.user = { name = "Alice" } -- Automatically becomes a reactive table
+local data = Dictionary.new({})
+data.user = { name = "Alice" } -- Automatically becomes a reactive dictionary
 data.user.name = "Bob" -- Triggers change event on both data.user and data
 ```
 
@@ -89,8 +93,8 @@ data.name = "John"  -- No event fired (same value)
 
 ### Basic Reactive Data
 ```lua
--- Create a reactive player data table
-local playerData = Table.new({
+-- Create a reactive player data dictionary
+local playerData = Dictionary.new({
     health = 100,
     score = 0,
     level = 1
@@ -110,7 +114,7 @@ playerData.score = 150
 ### UI Data Binding
 ```lua
 -- Reactive form data
-local formData = Table.new({
+local formData = Dictionary.new({
     username = "",
     email = "",
     isValid = false
@@ -130,7 +134,7 @@ formData.email = "john@example.com"
 ### Nested Configuration System
 ```lua
 -- Game settings with nested structure
-local gameSettings = Table.new({
+local gameSettings = Dictionary.new({
     graphics = {
         quality = "High",
         vsync = true,
@@ -158,7 +162,7 @@ gameSettings.graphics.resolution.width = 1280
 ### Inventory Management System
 ```lua
 -- Player inventory with reactive updates
-local inventory = Table.new({
+local inventory = Dictionary.new({
     items = {},
     capacity = 20,
     weight = 0
@@ -180,7 +184,7 @@ inventory.weight = 10
 ### State Management Pattern
 ```lua
 -- Application state store
-local appState = Table.new({
+local appState = Dictionary.new({
     currentPage = "menu",
     user = {
         loggedIn = false,
@@ -207,7 +211,7 @@ appState.user.profile = { username = "Player1", level = 5 }
 ### Shopping Cart Example
 ```lua
 -- E-commerce cart with automatic calculations
-local shoppingCart = Table.new({
+local shoppingCart = Dictionary.new({
     items = {},
     subtotal = 0,
     tax = 0,
@@ -236,11 +240,13 @@ shoppingCart.items["mouse"] = { price = 29.99, quantity = 2 }
 ### Cleanup Example
 ```lua
 -- Always clean up when done
-local tempData = Table.new({ status = "processing" })
+local tempData = Dictionary.new({ status = "processing" })
 
-tempData.Changed:Connect(function()
+local connection = tempData.Changed:Connect(function()
     if tempData.status == "complete" then
-        -- Clean up the reactive table
+        -- Disconnect the connection first
+        connection:Disconnect()
+        -- Then destroy the reactive dictionary (disables all listening)
         tempData:Destroy()
     end
 end)

@@ -50,23 +50,22 @@ function Signal.new()
 end
 
 
-local Table = {}
-type Table<T> = {
+local Dictionary = {}
+type Dictionary<T> = {
 	Changed: typeof(Signal.new()),
 	Raw: T,
-	Destroy: () -> nil
+	Destroy: (self: Dictionary<T>) -> nil
 }
 
-function Table.new<T>(table: T): T & Table<T>
+function Dictionary.new<T>(table: T): T & Dictionary<T>
 	local self = {}
 	self.Changed = Signal.new()
 	self.Raw = table
-	self.Tables = {}
+	self.Dictionaries = {}
 	
-	local function createTable(k, v)
-		local newT = Table.new(v)
-		self.Tables[k] = newT
-		--rawset(self, k, newT)
+	local function createDictionary(k, v)
+		local newT = Dictionary.new(v)
+		self.Dictionaries[k] = newT
 		newT.Changed:Connect(function()
 			self.Changed:Fire()
 		end)
@@ -77,13 +76,12 @@ function Table.new<T>(table: T): T & Table<T>
 
 	function self:Destroy()
 		self.Changed:Destroy()
-		self = nil
 	end
 
 	local mt = {
 		__index = function(t, i)
 			if type(rawget(table, i)) == "table" then
-				return rawget(self, "Tables")[i]
+				return rawget(self, "Dictionaries")[i]
 			end
 			return table[i]            
 		end,
@@ -93,7 +91,7 @@ function Table.new<T>(table: T): T & Table<T>
 			end
 			
 			if type(v) == "table" then
-				createTable(i, v)
+				createDictionary(i, v)
 			end
 			
 			table[i] = v
@@ -104,7 +102,7 @@ function Table.new<T>(table: T): T & Table<T>
 
 	for k, v in table do
 		if type(v) == "table" then
-			createTable(k, v)
+			createDictionary(k, v)
 		end
 	end
 
@@ -113,4 +111,4 @@ function Table.new<T>(table: T): T & Table<T>
 	return self
 end
 
-return Table
+return Dictionary
